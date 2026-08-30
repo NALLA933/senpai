@@ -142,6 +142,21 @@ Config Config::load(const std::string& envFile) {
     // MONGO_URL -> DB_PATH for the SQLite port.
     c.db_path = env.str("DB_PATH", "anonx.db");
 
+    // COOKIES_URL: space-separated; keep only batbin.me links
+    {
+        std::string raw = env.str("COOKIES_URL");
+        if (!raw.empty()) {
+            c.cookies_url.clear(); // clear default if env is provided
+            std::istringstream iss(raw);
+            std::string tok;
+            while (iss >> tok) {
+                if (tok.find("batbin.me") != std::string::npos) {
+                    c.cookies_url.push_back(tok);
+                }
+            }
+        }
+    }
+
 
     return c;
 }
