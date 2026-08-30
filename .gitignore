@@ -1,0 +1,19 @@
+# Build trees
+build/
+cmake-build-*/
+
+# Runtime state — see DEPLOYMENT.md ("What the first run leaves on disk").
+# cache/, downloads/ and tdlib/ are created at boot, so they need no placeholder.
+.env
+anonx.db
+anonx.db-wal
+anonx.db-shm
+log.txt
+log.txt.*
+tdlib/
+cache/
+downloads/
+cookies/
+
+# Demo/test residue
+yt_demo_log.txt
