@@ -16,8 +16,9 @@
 
 namespace anonx {
 namespace {
-
 using nlohmann::json;
+
+Logger log() { return Logger("anonx.tdlib"); }
 
 // One process-wide pump: TDLib requires that td_receive() be called from a
 // single thread. It routes each received object to the owning client by its
@@ -73,7 +74,7 @@ private:
                 std::ofstream ofs("tdlib_debug.log", std::ios::app);
                 ofs << s << "\n";
             }
-            anonx::log().info("TD_RECEIVE_RAW: " + s);
+            log().info("TD_RECEIVE_RAW: " + s);
 
             json j = json::parse(s, nullptr, false);
             if (j.is_discarded() || !j.is_object() || !j.contains("@client_id")) continue;
