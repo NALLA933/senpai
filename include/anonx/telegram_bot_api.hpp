@@ -40,12 +40,19 @@ public:
 
     std::int64_t sendMessage(std::int64_t chatId, const std::string& html,
                              const InlineKeyboard& kb = {}) override;
+    std::int64_t sendPhoto(std::int64_t chatId, const std::string& photoPath,
+                           const std::string& captionHtml,
+                           const InlineKeyboard& kb = {}) override;
 
     DownloadResult downloadFile(int32_t fileId, std::function<bool(const DownloadProgress&)> progressCallback) override;
 
     bool editMessageText(std::int64_t chatId, std::int64_t messageId,
                          const std::string& html,
                          const InlineKeyboard& kb = {}) override;
+    bool editMessageMedia(std::int64_t chatId, std::int64_t messageId,
+                          const std::string& photoPath,
+                          const std::string& captionHtml,
+                          const InlineKeyboard& kb = {}) override;
     bool editMessageReplyMarkup(std::int64_t chatId, std::int64_t messageId,
                                 const InlineKeyboard& kb) override;
     bool deleteMessage(std::int64_t chatId, std::int64_t messageId) override;
@@ -66,9 +73,13 @@ public:
     std::string botName() override;
     std::string botUsername() override;
     std::string chatTitle(std::int64_t chatId) override;
+    std::string chatUsername(std::int64_t chatId) override;
     std::string userUsername(std::int64_t userId) override;
     std::string userMention(std::int64_t userId) override;
     std::string messageLink(std::int64_t chatId, std::int64_t messageId) override;
+
+    bool canInviteUsers(std::int64_t chatId) override;
+    std::string exportChatInviteLink(std::int64_t chatId) override;
 
     // Drop the memoised titles/users (e.g. after a rename). Also called
     // automatically once a cache grows past kCacheLimit entries.

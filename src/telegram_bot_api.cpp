@@ -2,9 +2,20 @@
 // telegram_bot_api.cpp — see telegram_bot_api.hpp.
 
 #include "anonx/telegram_bot_api.hpp"
+#include <nlohmann/json.hpp>
 
 namespace anonx {
 namespace {
+
+using nlohmann::json;
+
+// Safe string-field read: returns "" unless the key holds a string.
+std::string strField(const json& j, const char* key) {
+    if (j.is_object() && j.contains(key) && j[key].is_string()) {
+        return j[key].get<std::string>();
+    }
+    return std::string();
+}
 
 // Same escaping the command layer uses (Plugins::htmlEscape), duplicated here as
 // a three-line local rather than pulling the plugin header into the Telegram
