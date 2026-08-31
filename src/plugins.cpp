@@ -308,6 +308,9 @@ void Plugins::renderNotice(std::int64_t chatId, CallManager::Notice notice) {
         case CallManager::Notice::ErrorServer:
             text = L["error_tg_server"];
             break;
+        case CallManager::Notice::AutoLeft:
+            text = L["auto_left"];
+            break;
         case CallManager::Notice::ErrorRtmp:
             text = L["error_rtmp"];
             break;
@@ -561,7 +564,7 @@ void Plugins::onPlay(const CommandEvent& ev) {
     req.chatId       = ev.chatId;
     req.fromUserId   = ev.fromUserId;
     req.isSupergroup = !ev.isPrivate && isSupergroupId(ev.chatId);
-    req.hasReply     = false;   // replied media is deferred (see plugins.hpp)
+    // replied media is deferred (see plugins.hpp)
     req.command      = ev.command;
 
     const guards::PlayPreflight pre =
@@ -638,9 +641,10 @@ void Plugins::onPlay(const CommandEvent& ev) {
         }
         logged = item;
     } else if (req.hasReply()) {
-        if (req.replyMedia.size > config_.max_download_bytes) {
+        const int64_t max_download_bytes = 100 * 1024 * 1024;
+        if (req.replyMedia.size > max_download_bytes) {
             takeStatus(ev.chatId);
-            api_.sendMessage(ev.chatId, L.fmt("dl_limit_size", config_.max_download_bytes / 1024 / 1024));
+            api_.sendMessage(ev.chatId, L.fmt("dl_limit_size", max_download_bytes / 1024 / 1024));
             return;
         }
         MediaItem item;

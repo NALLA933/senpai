@@ -67,6 +67,7 @@
 #include "anonx/call_manager.hpp"
 #include "anonx/config.hpp"
 #include "anonx/database.hpp"
+#include "anonx/dispatcher.hpp"
 #include "anonx/lang.hpp"
 #include "anonx/queue.hpp"
 #include "anonx/thumbnail_renderer.hpp"
