@@ -29,6 +29,7 @@
 #include "anonx/assistant_api.hpp"
 #include "anonx/config.hpp"
 #include "anonx/database.hpp"
+#include "anonx/dispatcher.hpp"
 #include "anonx/queue.hpp"
 #include "anonx/youtube.hpp"
 
