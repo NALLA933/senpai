@@ -22,10 +22,12 @@
 #define ANONX_BOT_API_HPP
 
 #include <cstdint>
+#include <functional>
 #include <string>
 #include <vector>
 
 #include "anonx/inline_keyboard.hpp"   // InlineButton / InlineKeyboard
+#include "anonx/youtube.hpp"           // DownloadResult / DownloadProgress
 
 namespace anonx {
 
