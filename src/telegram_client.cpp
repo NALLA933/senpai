@@ -353,6 +353,9 @@ void TelegramClient::setUpdateObserver(TdClient::UpdateHandler observer) {
 }
 
 void TelegramClient::onUpdate(const std::string& updateJson) {
+    // ---- DEBUG LOG ALL UPDATES ----
+    log().info("TDLIB UPDATE [" + opts_.name + "]: " + updateJson);
+    
     json j = json::parse(updateJson, nullptr, false);
     if (j.is_discarded() || !j.is_object()) return;
 

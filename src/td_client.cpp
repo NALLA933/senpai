@@ -64,6 +64,8 @@ private:
             const char* r = td_receive(0.1);   // seconds
             if (!r) continue;
             std::string s(r);
+            // DEBUG LOG
+            Logger::instance().info("TD_RECEIVE_RAW: " + s);
 
             json j = json::parse(s, nullptr, false);
             if (j.is_discarded() || !j.is_object() || !j.contains("@client_id")) continue;
