@@ -68,6 +68,7 @@ set(ANONX_TG_SOURCES
   src/dispatcher.cpp
   src/userbot.cpp
   src/telegram_bot_api.cpp
+  src/telegram_assistant_api.cpp
   src/voice_signaling.cpp
   src/runtime.cpp
 )

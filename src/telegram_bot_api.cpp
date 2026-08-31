@@ -179,8 +179,8 @@ std::string TelegramBotApi::userUsername(std::int64_t userId) {
 std::string TelegramBotApi::userMention(std::int64_t userId) {
     const TelegramClient::UserInfo info = user(userId);
     if (!info.found || info.firstName.empty()) {
-        // Fall back to the id-only mention from BotApi — still a working link.
-        return BotApi::userMention(userId);
+        // Fall back to the id-only mention.
+        return "<a href=\"tg://user?id=" + std::to_string(userId) + "\">" + std::to_string(userId) + "</a>";
     }
     return "<a href=\"tg://user?id=" + std::to_string(userId) + "\">" +
            escape(info.firstName) + "</a>";
