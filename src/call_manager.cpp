@@ -251,7 +251,7 @@ bool CallManager::pause(std::int64_t chatId) {
         timer_.schedule(chatId, 900, [this, chatId]() {
             auto innerLk = lockFor(chatId);
             // Only stop if still paused and active.
-            if (cache_.isActiveCall(chatId) && cache_.isPaused(chatId)) {
+            if (cache_.isActiveCall(chatId) && !cache_.isPlaying(chatId)) {
                 stop(chatId);
                 if (cb_.onNotice)
                     cb_.onNotice(chatId, Notice::AutoLeft);
