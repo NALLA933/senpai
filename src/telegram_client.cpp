@@ -35,6 +35,13 @@ std::int64_t intField(const json& j, const char* key) {
     return 0;
 }
 
+bool boolField(const json& j, const char* key) {
+    if (j.is_object() && j.contains(key) && j[key].is_boolean()) {
+        return j[key].get<bool>();
+    }
+    return false;
+}
+
 TelegramClient::Me parseUser(const json& u) {
     TelegramClient::Me m;
     m.id = intField(u, "id");
@@ -617,7 +624,7 @@ DownloadResult TelegramClient::downloadFile(int32_t fileId, std::function<bool(c
         dlCv_.wait_for(lk, std::chrono::milliseconds(500));
 
         if (dl->completed) {
-            res.status = DownloadStatus::Success;
+            res.status = DownloadStatus::Ok;
             res.path = dl->localPath;
             break;
         }
