@@ -41,8 +41,8 @@ public:
 
     void ensureStarted() {
         std::lock_guard<std::mutex> lk(startMutex_);
-        if (running_) return;
-        running_ = true;
+        if (started_) return;
+        started_ = true;
         stop_.store(false);
         
         // Initialize TDLib global state (e.g. logging/actor system)
@@ -50,17 +50,17 @@ public:
         std::string req = R"({"@type":"setLogVerbosityLevel","new_verbosity_level":1})";
         td_execute(req.c_str());
 
-        th_ = std::thread([this] { run(); });
+        thread_ = std::thread([this] { run(); });
     }
 
     void stop() {
         stop_.store(true);
-        if (th_.joinable()) th_.join();
-        running_ = false;
+        if (thread_.joinable()) thread_.join();
+        started_ = false;
     }
 
 private:
-    TdPump() : running_(false), stop_(false) {}
+    TdPump() : started_(false), stop_(false) {}
     ~TdPump() { stop(); }
 
     void run() {
@@ -73,7 +73,7 @@ private:
                 std::ofstream ofs("tdlib_debug.log", std::ios::app);
                 ofs << s << "\n";
             }
-            log().info("TD_RECEIVE_RAW: " + s);
+            anonx::log().info("TD_RECEIVE_RAW: " + s);
 
             json j = json::parse(s, nullptr, false);
             if (j.is_discarded() || !j.is_object() || !j.contains("@client_id")) continue;
