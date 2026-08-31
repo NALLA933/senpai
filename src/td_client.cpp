@@ -10,6 +10,7 @@
 #include <chrono>
 #include <thread>
 #include <unordered_map>
+#include <fstream>
 
 #include "anonx/logger.hpp"
 
@@ -61,7 +62,11 @@ private:
             const char* r = td_receive(0.1);   // seconds
             if (!r) continue;
             std::string s(r);
-            // DEBUG LOG
+            // DEBUG LOG to file so it's not lost
+            {
+                std::ofstream ofs("tdlib_debug.log", std::ios::app);
+                ofs << s << "\n";
+            }
             log().info("TD_RECEIVE_RAW: " + s);
 
             json j = json::parse(s, nullptr, false);
