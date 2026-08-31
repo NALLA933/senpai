@@ -44,6 +44,12 @@ public:
         if (running_) return;
         running_ = true;
         stop_.store(false);
+        
+        // Initialize TDLib global state (e.g. logging/actor system)
+        // Some TDLib versions require td_execute to fully wake up the C JSON API
+        std::string req = R"({"@type":"setLogVerbosityLevel","new_verbosity_level":1})";
+        td_execute(req.c_str());
+
         th_ = std::thread([this] { run(); });
     }
 
