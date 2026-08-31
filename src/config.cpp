@@ -3,6 +3,8 @@
 
 #include "anonx/config.hpp"
 
+#include "anonx/utils.hpp"
+
 #include <algorithm>
 #include <cctype>
 #include <cstdlib>
@@ -38,11 +40,7 @@ std::string stripQuotes(const std::string& s) {
     return s;
 }
 
-std::string toLower(std::string s) {
-    std::transform(s.begin(), s.end(), s.begin(),
-                   [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-    return s;
-}
+
 
 // Parse a .env file into a key->value map. Rules:
 //   * blank lines and lines whose first non-space char is '#' are ignored
@@ -110,7 +108,7 @@ public:
     bool boolean(const char* key, bool def) const {
         std::string v = str(key);
         if (v.empty()) return def;
-        return toLower(v) == "true";
+        return anonx::utils::toLower(v) == "true";
     }
 
 private:
@@ -157,6 +155,28 @@ Config Config::load(const std::string& envFile) {
         }
     }
 
+    // ---- limits ----
+    c.duration_limit_seconds = static_cast<int>(env.integer("DURATION_LIMIT", 60)) * 60;
+    c.queue_limit            = static_cast<int>(env.integer("QUEUE_LIMIT", 20));
+    c.playlist_limit         = static_cast<int>(env.integer("PLAYLIST_LIMIT", 20));
+
+    // ---- links ----
+    c.support_channel = env.str("SUPPORT_CHANNEL", "https://t.me/fallenx");
+    c.support_chat    = env.str("SUPPORT_CHAT", "https://t.me/DevilsHeavenMF");
+
+    // ---- feature flags ----
+    c.auto_leave = env.boolean("AUTO_LEAVE", false);
+    c.auto_end   = env.boolean("AUTO_END", false);
+    c.thumb_gen  = env.boolean("THUMB_GEN", true);
+    c.video_play = env.boolean("VIDEO_PLAY", true);
+
+    // ---- localisation ----
+    c.lang_code = env.str("LANG_CODE", "en");
+
+    // ---- media / assets ----
+    c.default_thumb = env.str("DEFAULT_THUMB", "https://te.legra.ph/file/3e40a408286d4eda24191.jpg");
+    c.ping_img      = env.str("PING_IMG", "https://files.catbox.moe/haagg2.png");
+    c.start_img     = env.str("START_IMG", "https://files.catbox.moe/zvziwk.jpg");
 
     return c;
 }
@@ -170,13 +190,26 @@ void Config::check() const {
     if (owner_id == 0)      missing.push_back("OWNER_ID");
     if (session1.empty())   missing.push_back("SESSION");
 
+    // Enforce that if a session string is provided (or not provided but phone is), they match.
+    // Assistant 1
+    if (!session1.empty() && phone1.empty()) missing.push_back("PHONE_NUMBER (required when SESSION is set)");
+    if (session1.empty() && !phone1.empty()) missing.push_back("SESSION (required when PHONE_NUMBER is set)");
+    
+    // Assistant 2
+    if (!session2.empty() && phone2.empty()) missing.push_back("PHONE_NUMBER2 (required when SESSION2 is set)");
+    if (session2.empty() && !phone2.empty()) missing.push_back("SESSION2 (required when PHONE_NUMBER2 is set)");
+
+    // Assistant 3
+    if (!session3.empty() && phone3.empty()) missing.push_back("PHONE_NUMBER3 (required when SESSION3 is set)");
+    if (session3.empty() && !phone3.empty()) missing.push_back("SESSION3 (required when PHONE_NUMBER3 is set)");
+
     if (!missing.empty()) {
         std::string list;
         for (std::size_t i = 0; i < missing.size(); ++i) {
             if (i) list += ", ";
             list += missing[i];
         }
-        throw ConfigError("Missing required environment variables: " + list);
+        throw ConfigError("Missing required environment variables/consistency: " + list);
     }
 }
 

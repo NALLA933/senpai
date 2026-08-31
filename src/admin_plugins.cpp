@@ -14,54 +14,15 @@
 
 #include "anonx/guards.hpp"
 
+#include "anonx/utils.hpp"
+
 namespace anonx {
 namespace {
-
-std::vector<std::string> splitWs(const std::string& text) {
-    std::vector<std::string> out;
-    std::istringstream in(text);
-    std::string tok;
-    while (in >> tok)
-        out.push_back(tok);
-    return out;
-}
-
-std::string toLower(std::string text) {
-    std::transform(text.begin(), text.end(), text.begin(), [](unsigned char c) {
-        return static_cast<char>(std::tolower(c));
-    });
-    return text;
-}
-
-// Strict signed parse; false on empty/garbage/overflow so the caller can show
-// the "only ids are supported" string instead of acting on a silent 0.
-bool parseI64(const std::string& text, std::int64_t& out) {
-    if (text.empty() || text.size() > 20)
-        return false;
-    std::size_t i = 0;
-    bool negative = false;
-    if (text[0] == '-' || text[0] == '+') {
-        negative = text[0] == '-';
-        i = 1;
-        if (text.size() == 1)
-            return false;
-    }
-    std::int64_t value = 0;
-    for (; i < text.size(); ++i) {
-        if (text[i] < '0' || text[i] > '9')
-            return false;
-        if (value > (9223372036854775807LL - (text[i] - '0')) / 10)
-            return false;
-        value = value * 10 + (text[i] - '0');
-    }
-    out = negative ? -value : value;
-    return true;
-}
 
 // Does `tokens` (a command's arguments) contain `flag`, case-insensitively?
 bool hasFlag(const std::vector<std::string>& tokens, const std::string& flag) {
     for (std::size_t i = 1; i < tokens.size(); ++i)
-        if (toLower(tokens[i]) == flag)
+        if (anonx::utils::toLower(tokens[i]) == flag)
             return true;
     return false;
 }
@@ -184,7 +145,7 @@ std::int64_t AdminPlugins::resolveTarget(const CommandEvent& ev) const {
     }
     if (ev.command.size() >= 2) {
         std::int64_t id = 0;
-        if (parseI64(ev.command[1], id) && id > 0)
+        if (anonx::utils::parseI64(ev.command[1], id) && id > 0)
             return id;
     }
     return 0;
@@ -264,7 +225,7 @@ void AdminPlugins::onAuthList(const CommandEvent& ev) {
         return;
     }
 
-    std::string text = L.fmt("auth_list", Plugins::htmlEscape(api_.chatTitle(ev.chatId)));
+    std::string text = L.fmt("auth_list", anonx::utils::htmlEscape(api_.chatTitle(ev.chatId)));
     for (std::int64_t id : users)
         text += "- " + api_.userMention(id) + "\n";
     api_.sendMessage(ev.chatId, text);
@@ -287,7 +248,7 @@ void AdminPlugins::onBlacklist(const CommandEvent& ev) {
     // The target may be given as an id, or by replying to someone's message.
     std::int64_t id = 0;
     if (ev.command.size() >= 2) {
-        if (!parseI64(ev.command[1], id) || id == 0) {
+        if (!anonx::utils::parseI64(ev.command[1], id) || id == 0) {
             api_.sendMessage(ev.chatId, L["bl_invalid"]);
             return;
         }
@@ -545,7 +506,7 @@ void AdminPlugins::onActiveVc(const CommandEvent& ev) {
     std::string text = L["vc_list"];
     for (std::int64_t chatId : active) {
         text += "\n- <code>" + std::to_string(chatId) + "</code> | " +
-                Plugins::htmlEscape(api_.chatTitle(chatId));
+                anonx::utils::htmlEscape(api_.chatTitle(chatId));
     }
     say(ev.chatId, text);
 }
@@ -630,7 +591,7 @@ void AdminPlugins::onLogger(const CommandEvent& ev) {
     }
 
     const std::string name = ev.command.empty() ? std::string("logger") : ev.command[0];
-    const std::string arg = ev.command.size() >= 2 ? toLower(ev.command[1]) : std::string();
+    const std::string arg = ev.command.size() >= 2 ? anonx::utils::toLower(ev.command[1]) : std::string();
     if (arg == "on" || arg == "enable") {
         db_.setLoggerEnabled(true);
         api_.sendMessage(ev.chatId, L["logger_on"]);
@@ -672,7 +633,7 @@ void AdminPlugins::onSeen(const CommandEvent& ev) {
         return;
     db_.addChat(ev.chatId);
     toLogGroup(L.fmt("log_chat", ev.chatId,
-                     Plugins::htmlEscape(api_.chatTitle(ev.chatId)), ev.fromUserId,
+                     anonx::utils::htmlEscape(api_.chatTitle(ev.chatId)), ev.fromUserId,
                      ev.fromUserId == 0 ? kNoUsername
                                         : api_.userMention(ev.fromUserId)));
 }
@@ -683,7 +644,7 @@ void AdminPlugins::onSeen(const CommandEvent& ev) {
 
 void AdminPlugins::onMenu(const ButtonEvent& ev) {
     const LangView L = tr(ev.chatId);
-    const std::vector<std::string> parts = splitWs(ev.data);
+    const std::vector<std::string> parts = anonx::utils::splitWs(ev.data);
     if (parts.empty())
         return;
 
@@ -717,7 +678,7 @@ void AdminPlugins::onMenu(const ButtonEvent& ev) {
             return;
         }
         std::int64_t index = 0;
-        if (!parseI64(action, index) || index < 0 ||
+        if (!anonx::utils::parseI64(action, index) || index < 0 ||
             index >= static_cast<std::int64_t>(helpTopics().size()))
             return;
         api_.editMessageText(ev.chatId, ev.messageId,

@@ -13,6 +13,8 @@
 
 #include "anonx/logger.hpp"
 
+#include "anonx/utils.hpp"
+
 namespace anonx {
 namespace {
 
@@ -20,28 +22,15 @@ using nlohmann::json;
 
 Logger log() { return Logger("anonx.voice.signaling"); }
 
-std::string strField(const json& j, const char* key) {
-    if (j.is_object() && j.contains(key) && j[key].is_string()) {
-        return j[key].get<std::string>();
-    }
-    return std::string();
-}
-
-std::int64_t intField(const json& j, const char* key) {
-    if (j.is_object() && j.contains(key) && j[key].is_number()) {
-        return j[key].get<std::int64_t>();
-    }
-    return 0;
-}
 
 bool isError(const json& j) {
-    return j.is_object() && strField(j, "@type") == "error";
+    return j.is_object() && anonx::utils::strField(j, "@type") == "error";
 }
 
 // TDLib reports an unimplemented method with code 400/404 and a message that
 // names it. Used to decide whether the other spelling of the call is worth a try.
 bool looksLikeUnknownMethod(const json& err) {
-    const std::string msg = strField(err, "message");
+    const std::string msg = anonx::utils::strField(err, "message");
     return msg.find("Unknown") != std::string::npos ||
            msg.find("unknown") != std::string::npos ||
            msg.find("not supported") != std::string::npos;
@@ -52,7 +41,7 @@ bool looksLikeUnknownMethod(const json& err) {
 std::int32_t audioSourceId(const json& params) {
     for (const char* key : {"ssrc", "source", "audio_source"}) {
         if (params.is_object() && params.contains(key) && params[key].is_number()) {
-            return static_cast<std::int32_t>(intField(params, key));
+            return static_cast<std::int32_t>(anonx::utils::intField(params, key));
         }
     }
     return 0;
@@ -100,7 +89,7 @@ std::int32_t activeGroupCallId(TelegramClient& client, std::int64_t chatId) {
     for (const char* key : {"video_chat", "voice_chat"}) {
         if (chat.contains(key) && chat[key].is_object()) {
             const std::int32_t id =
-                static_cast<std::int32_t>(intField(chat[key], "group_call_id"));
+                static_cast<std::int32_t>(anonx::utils::intField(chat[key], "group_call_id"));
             if (id != 0) return id;
         }
     }
@@ -165,7 +154,7 @@ NtgCallsTransport::Signaling makeAssistantSignaling(TelegramClient& assistant) {
 
         if (reply.is_discarded() || isError(reply)) {
             const std::string msg =
-                reply.is_discarded() ? "unparseable reply" : strField(reply, "message");
+                reply.is_discarded() ? "unparseable reply" : anonx::utils::strField(reply, "message");
             log().warning("join failed for chat " + std::to_string(chatId) + ": " + msg);
             throw VoiceError(PlayResult::ServerError, "join rejected: " + msg);
         }
@@ -173,7 +162,7 @@ NtgCallsTransport::Signaling makeAssistantSignaling(TelegramClient& assistant) {
         state->remember(chatId, groupCallId);
 
         // TDLib answers with text{ text: <remote parameters JSON> }.
-        const std::string remote = strField(reply, "text");
+        const std::string remote = anonx::utils::strField(reply, "text");
         if (remote.empty()) {
             throw VoiceError(PlayResult::ServerError, "join returned no parameters");
         }

@@ -7,21 +7,10 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "anonx/utils.hpp"
+
 namespace anonx {
 
-namespace {
-
-std::string shellQuote(const std::string& s) {
-    std::string r = "'";
-    for (const char c : s) {
-        if (c == '\'') r += "'\\''";
-        else r += c;
-    }
-    r += "'";
-    return r;
-}
-
-} // namespace
 
 CurlCookieSource::CurlCookieSource(std::string curlBin) : curlBin_(std::move(curlBin)) {}
 
@@ -39,7 +28,7 @@ void CurlCookieSource::fetch(const std::vector<std::string>& urls) {
         std::remove(tmp_path.c_str());
 
         // Curl command: silent, fail on HTTP error, follow redirects, limit size to 1MB, output to temp
-        std::string cmd = curlBin_ + " -s -f -L --max-filesize 1000000 -o " + tmp_path + " " + shellQuote(url);
+        std::string cmd = curlBin_ + " -s -f -L --max-filesize 1000000 -o " + tmp_path + " " + anonx::utils::shellQuote(url);
         int ret = std::system(cmd.c_str());
         
         if (ret != 0) {

@@ -178,10 +178,8 @@ public:
     // are always below -1000000000000. Ports the ChatType.SUPERGROUP test.
     static bool isSupergroupId(std::int64_t chatId);
 
-    // Escape text that goes into an HTML message body (titles can contain "&").
-    static std::string htmlEscape(const std::string& text);
-
 private:
+    // Translates the chat's language code.
     LangView tr(std::int64_t chatId) const;
 
     // Pending-status-message slot (see the handoff note above).

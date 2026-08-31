@@ -3,20 +3,10 @@
 
 #include <cstdlib>
 #include <cstdio>
-#include <string>
+#include "anonx/utils.hpp"
 
 namespace anonx {
 namespace {
-
-std::string shQuote(const std::string& s) {
-    std::string out = "'";
-    for (char c : s) {
-        if (c == '\'') out += "'\\''";
-        else out += c;
-    }
-    out += "'";
-    return out;
-}
 
 std::string escapeDrawtext(const std::string& s) {
     std::string out;
@@ -47,7 +37,7 @@ std::string FfmpegThumbnailRenderer::render(const std::string& coverUrl,
 
     // 1. Fetch cover art using curl
     // ponytail: using curl directly via system() as it's the simplest working seam.
-    std::string curlCmd = "curl -s -L -o " + shQuote(inPath) + " " + shQuote(coverUrl);
+    std::string curlCmd = "curl -s -L -o " + anonx::utils::shellQuote(inPath) + " " + anonx::utils::shellQuote(coverUrl);
     if (std::system(curlCmd.c_str()) != 0) {
         return "";
     }
@@ -57,7 +47,7 @@ std::string FfmpegThumbnailRenderer::render(const std::string& coverUrl,
     std::string text = escapeDrawtext(title + " | " + duration + " | " + channel + " | " + requester);
     std::string filter = "drawtext=text='" + text + "':x=10:y=10:fontsize=24:fontcolor=white:box=1:boxcolor=black@0.5";
     
-    std::string ffmpegCmd = "ffmpeg -y -i " + shQuote(inPath) + " -vf " + shQuote(filter) + " -frames:v 1 " + shQuote(outPath) + " >/dev/null 2>&1";
+    std::string ffmpegCmd = "ffmpeg -y -i " + anonx::utils::shellQuote(inPath) + " -vf " + anonx::utils::shellQuote(filter) + " -frames:v 1 " + anonx::utils::shellQuote(outPath) + " >/dev/null 2>&1";
     
     if (std::system(ffmpegCmd.c_str()) != 0) {
         std::remove(inPath.c_str());
@@ -74,7 +64,7 @@ std::string FfmpegThumbnailRenderer::fetch(const std::string& url) {
     const int id = (++counter_) % 100;
     const std::string outPath = "cache/thumb_fetch_" + std::to_string(id) + ".jpg";
 
-    std::string curlCmd = "curl -s -L -o " + shQuote(outPath) + " " + shQuote(url);
+    std::string curlCmd = "curl -s -L -o " + anonx::utils::shellQuote(outPath) + " " + anonx::utils::shellQuote(url);
     if (std::system(curlCmd.c_str()) != 0) {
         return "";
     }

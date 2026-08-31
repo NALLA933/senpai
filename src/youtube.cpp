@@ -4,6 +4,7 @@
 #include "anonx/youtube.hpp"
 
 #include "anonx/logger.hpp"
+#include "anonx/utils.hpp"
 
 #include <nlohmann/json.hpp>
 
@@ -96,16 +97,7 @@ std::string stripQuery(std::string u) {
     return u;
 }
 
-// Wrap an argument in single quotes for /bin/sh, escaping embedded quotes.
-std::string shellQuote(const std::string& s) {
-    std::string r = "'";
-    for (const char c : s) {
-        if (c == '\'') r += "'\\''";
-        else r += c;
-    }
-    r += "'";
-    return r;
-}
+
 
 bool fileExists(const std::string& path) {
     return ::access(path.c_str(), F_OK) == 0;
@@ -304,7 +296,7 @@ std::optional<Track> YouTube::parseTrackJson(const std::string& jsonText, bool v
 
 std::optional<Track> YouTube::search(const std::string& query,
                                      std::int64_t messageId, bool video) {
-    const std::string cmd = "yt-dlp " + shellQuote("ytsearch1:" + query) +
+    const std::string cmd = "yt-dlp " + anonx::utils::shellQuote("ytsearch1:" + query) +
                             " --dump-json --no-download --no-warnings 2>/dev/null";
     const std::string out = runCommand(cmd);
 
@@ -327,7 +319,7 @@ std::vector<Track> YouTube::playlist(const std::string& url, int limit,
     std::vector<Track> tracks;
     if (limit <= 0) return tracks;
 
-    const std::string cmd = "yt-dlp " + shellQuote(url) +
+    const std::string cmd = "yt-dlp " + anonx::utils::shellQuote(url) +
                             " --flat-playlist --dump-json --no-download --no-warnings 2>/dev/null";
     const std::string out = runCommand(cmd);
 
@@ -497,19 +489,19 @@ DownloadResult YouTube::downloadStream(const std::string& videoId, bool video,
         video ? "(bestvideo[height<=?720][width<=?1280][ext=mp4])+(bestaudio)"
               : "bestaudio[ext=webm][acodec=opus]";
 
-    std::string cmd = "yt-dlp " + shellQuote(url) +
+    std::string cmd = "yt-dlp " + anonx::utils::shellQuote(url) +
                       " --no-playlist --geo-bypass --no-warnings --no-check-certificate";
-    cmd += " -f " + shellQuote(selector);
+    cmd += " -f " + anonx::utils::shellQuote(selector);
     if (video) cmd += " --merge-output-format mp4";
-    cmd += " -o " + shellQuote(std::string(kDownloadsDir) + "/%(id)s.%(ext)s");
+    cmd += " -o " + anonx::utils::shellQuote(std::string(kDownloadsDir) + "/%(id)s.%(ext)s");
 
     const std::string cookie = pickCookie();
-    if (!cookie.empty()) cmd += " --cookies " + shellQuote(cookie);
+    if (!cookie.empty()) cmd += " --cookies " + anonx::utils::shellQuote(cookie);
 
     // One progress line per update instead of a redrawn status bar, and no colour
     // escapes in the middle of it.
     cmd += " --newline --no-colors --progress --progress-template " +
-           shellQuote(kProgressTemplate);
+           anonx::utils::shellQuote(kProgressTemplate);
     cmd += " 2>/dev/null";
 
     return streamCommand(cmd, filename, onProgress, maxBytes);

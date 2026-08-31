@@ -3,37 +3,13 @@
 
 #include "anonx/telegram_bot_api.hpp"
 #include <nlohmann/json.hpp>
+#include "anonx/utils.hpp"
 
 namespace anonx {
 namespace {
 
 using nlohmann::json;
 
-// Safe string-field read: returns "" unless the key holds a string.
-std::string strField(const json& j, const char* key) {
-    if (j.is_object() && j.contains(key) && j[key].is_string()) {
-        return j[key].get<std::string>();
-    }
-    return std::string();
-}
-
-// Same escaping the command layer uses (Plugins::htmlEscape), duplicated here as
-// a three-line local rather than pulling the plugin header into the Telegram
-// layer: a display name can contain '<' or '&' and would otherwise break the
-// surrounding markup.
-std::string escape(const std::string& s) {
-    std::string out;
-    out.reserve(s.size());
-    for (char c : s) {
-        switch (c) {
-            case '&': out += "&amp;"; break;
-            case '<': out += "&lt;";  break;
-            case '>': out += "&gt;";  break;
-            default:  out.push_back(c); break;
-        }
-    }
-    return out;
-}
 
 }  // namespace
 
@@ -130,7 +106,7 @@ std::string TelegramBotApi::chatTitle(std::int64_t chatId) {
     json j = json::parse(bot_.raw().invoke(json::object({
         {"@type", "getChat"}, {"chat_id", chatId}
     }).dump()), nullptr, false);
-    return strField(j, "title");
+    return anonx::utils::strField(j, "title");
 }
 
 std::string TelegramBotApi::chatUsername(std::int64_t chatId) {
@@ -140,7 +116,7 @@ std::string TelegramBotApi::chatUsername(std::int64_t chatId) {
     }).dump()), nullptr, false);
     
     if (j.is_object() && j.contains("type") && j["type"].is_object()) {
-        const std::string type = strField(j["type"], "@type");
+        const std::string type = anonx::utils::strField(j["type"], "@type");
         if (type == "chatTypeSupergroup") {
             json sg = json::parse(bot_.raw().invoke(json::object({
                 {"@type", "getSupergroup"}, 
@@ -183,7 +159,7 @@ std::string TelegramBotApi::userMention(std::int64_t userId) {
         return "<a href=\"tg://user?id=" + std::to_string(userId) + "\">" + std::to_string(userId) + "</a>";
     }
     return "<a href=\"tg://user?id=" + std::to_string(userId) + "\">" +
-           escape(info.firstName) + "</a>";
+           anonx::utils::htmlEscape(info.firstName) + "</a>";
 }
 
 bool TelegramBotApi::canInviteUsers(std::int64_t chatId) {
@@ -194,12 +170,12 @@ bool TelegramBotApi::canInviteUsers(std::int64_t chatId) {
 
     const std::string resp = bot_.raw().invoke(req.dump());
     json j = json::parse(resp, nullptr, false);
-    if (j.is_discarded() || !j.is_object() || strField(j, "@type") != "chatMember") {
+    if (j.is_discarded() || !j.is_object() || anonx::utils::strField(j, "@type") != "chatMember") {
         return false;
     }
 
     if (j.contains("status") && j["status"].is_object()) {
-        const std::string type = strField(j["status"], "@type");
+        const std::string type = anonx::utils::strField(j["status"], "@type");
         if (type == "chatMemberStatusAdministrator" || type == "chatMemberStatusCreator") {
             if (j["status"].contains("can_invite_users")) {
                 return j["status"]["can_invite_users"].get<bool>();
@@ -217,8 +193,8 @@ std::string TelegramBotApi::exportChatInviteLink(std::int64_t chatId) {
     
     const std::string resp = bot_.raw().invoke(req.dump());
     json j = json::parse(resp, nullptr, false);
-    if (!j.is_discarded() && j.is_object() && strField(j, "@type") == "chatInviteLink") {
-        return strField(j, "invite_link");
+    if (!j.is_discarded() && j.is_object() && anonx::utils::strField(j, "@type") == "chatInviteLink") {
+        return anonx::utils::strField(j, "invite_link");
     }
     return std::string();
 }

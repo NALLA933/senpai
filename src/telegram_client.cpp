@@ -10,6 +10,7 @@
 #include <utility>
 
 #include "anonx/logger.hpp"
+#include "anonx/utils.hpp"
 
 namespace anonx {
 namespace {
@@ -184,19 +185,7 @@ json inputMessagePhoto(const std::string& photoPath, const std::string& captionH
     return content;
 }
 
-std::string htmlEscapeText(const std::string& s) {
-    std::string out;
-    out.reserve(s.size());
-    for (char c : s) {
-        switch (c) {
-            case '&': out += "&amp;"; break;
-            case '<': out += "&lt;";  break;
-            case '>': out += "&gt;";  break;
-            default:  out.push_back(c); break;
-        }
-    }
-    return out;
-}
+
 
 // Opening/closing HTML tags for a TDLib text-entity type. Returns false for
 // entity types with no HTML representation (mentions, hashtags, bot commands and
@@ -213,7 +202,7 @@ bool entityTags(const json& type, std::string& open, std::string& close) {
         open = "<span class=\"tg-spoiler\">"; close = "</span>"; return true;
     }
     if (t == "textEntityTypeTextUrl") {
-        open = "<a href=\"" + htmlEscapeText(strField(type, "url")) + "\">";
+        open = "<a href=\"" + anonx::utils::htmlEscape(strField(type, "url")) + "\">";
         close = "</a>";
         return true;
     }
@@ -292,7 +281,7 @@ std::string formattedTextToHtml(const json& formatted) {
 
         const std::string ch = text.substr(i, bytes);
         if (bytes == 1) {
-            out += htmlEscapeText(ch);
+            out += anonx::utils::htmlEscape(ch);
         } else {
             out += ch;   // multi-byte sequences need no escaping
         }

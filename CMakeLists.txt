@@ -37,6 +37,7 @@ target_compile_options(anonx_data PRIVATE -Wall -Wextra)
 
 # --- Phase 2/3: core library (config, logging, app skeleton, YouTube) ---
 add_library(anonx_core
+  src/utils.cpp
   src/config.cpp
   src/logger.cpp
   src/app.cpp

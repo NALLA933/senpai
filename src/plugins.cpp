@@ -18,18 +18,10 @@
 #include "anonx/buttons.hpp"
 #include "anonx/guards.hpp"
 
+#include "anonx/utils.hpp"
+
 namespace anonx {
 namespace {
-
-// Split a callback payload on single spaces (the format buttons.cpp emits).
-std::vector<std::string> splitWs(const std::string& text) {
-    std::vector<std::string> out;
-    std::istringstream in(text);
-    std::string tok;
-    while (in >> tok)
-        out.push_back(tok);
-    return out;
-}
 
 // Strict "all digits" parse. Returns false on empty/overflow/garbage so callers
 // can show the usage string instead of silently treating junk as 0.
@@ -46,33 +38,6 @@ bool parseU32(const std::string& text, long& out) {
     return true;
 }
 
-bool parseI64(const std::string& text, std::int64_t& out) {
-    if (text.empty() || text.size() > 20)
-        return false;
-    std::size_t i = 0;
-    bool negative = false;
-    if (text[0] == '-' || text[0] == '+') {
-        negative = text[0] == '-';
-        i = 1;
-        if (text.size() == 1)
-            return false;
-    }
-    std::int64_t value = 0;
-    for (; i < text.size(); ++i) {
-        if (text[i] < '0' || text[i] > '9')
-            return false;
-        value = value * 10 + (text[i] - '0');
-    }
-    out = negative ? -value : value;
-    return true;
-}
-
-std::string toLower(std::string text) {
-    std::transform(text.begin(), text.end(), text.begin(), [](unsigned char c) {
-        return static_cast<char>(std::tolower(c));
-    });
-    return text;
-}
 
 // A YouTube playlist link. Mirrors the `"list" in url` test in play.py.
 bool isPlaylistUrl(const std::string& url) {
@@ -143,20 +108,6 @@ bool Plugins::isSupergroupId(std::int64_t chatId) {
     return chatId <= -1000000000000LL;
 }
 
-std::string Plugins::htmlEscape(const std::string& text) {
-    std::string out;
-    out.reserve(text.size());
-    for (char c : text) {
-        switch (c) {
-            case '&': out += "&amp;"; break;
-            case '<': out += "&lt;";  break;
-            case '>': out += "&gt;";  break;
-            default:  out.push_back(c);
-        }
-    }
-    return out;
-}
-
 LangView Plugins::tr(std::int64_t chatId) const {
     return lang_.view(db_.getLang(chatId));
 }
@@ -203,13 +154,13 @@ std::int64_t Plugins::sayPhoto(std::int64_t chatId, const std::string& photoPath
 // ---------------------------------------------------------------------------
 
 std::string Plugins::nowPlayingCard(const LangView& L, const MediaItem& item) const {
-    return L.fmt("play_media", item.url, htmlEscape(item.title), item.duration,
+    return L.fmt("play_media", item.url, anonx::utils::htmlEscape(item.title), item.duration,
                  item.user);
 }
 
 std::string Plugins::queuedCard(const LangView& L, const MediaItem& item,
                                 int position) const {
-    return L.fmt("play_queued", position, item.url, htmlEscape(item.title),
+    return L.fmt("play_queued", position, item.url, anonx::utils::htmlEscape(item.title),
                  item.duration, item.user);
 }
 
@@ -254,14 +205,14 @@ void Plugins::postPlayLog(const CommandEvent& ev, const MediaItem& item) {
 
     // Both a chat title and a track title are free text, so both are escaped;
     // userMention() already returns markup and must not be.
-    std::string title = htmlEscape(api_.chatTitle(ev.chatId));
+    std::string title = anonx::utils::htmlEscape(api_.chatTitle(ev.chatId));
     if (title.empty())
         title = kUnknownField;
 
     api_.sendMessage(config_.logger_id,
-                     L.fmt("play_log", htmlEscape(api_.botName()), ev.chatId, title,
+                     L.fmt("play_log", anonx::utils::htmlEscape(api_.botName()), ev.chatId, title,
                            ev.fromUserId, api_.userMention(ev.fromUserId), link,
-                           htmlEscape(item.title), item.duration));
+                           anonx::utils::htmlEscape(item.title), item.duration));
 }
 
 // ---------------------------------------------------------------------------
@@ -694,7 +645,7 @@ void Plugins::onPlay(const CommandEvent& ev) {
         std::string summary = L.fmt("playlist_queued", tracks.size());
         int index = 1;
         for (const MediaItem& track : tracks) {
-            summary += L.fmt("queue_item", index++, htmlEscape(track.title),
+            summary += L.fmt("queue_item", index++, anonx::utils::htmlEscape(track.title),
                              track.duration);
         }
         // If the first track started streaming, the status message has already
@@ -822,7 +773,7 @@ void Plugins::onLoop(const CommandEvent& ev) {
         return;
     }
 
-    const std::string arg = toLower(ev.command[1]);
+    const std::string arg = anonx::utils::toLower(ev.command[1]);
     if (arg == "off" || arg == "disable" || arg == "0") {
         cache_.setLoop(ev.chatId, 0);
         api_.sendMessage(ev.chatId, L["loop_off"]);
@@ -849,10 +800,10 @@ void Plugins::onQueue(const CommandEvent& ev) {
     setStatus(ev.chatId, api_.sendMessage(ev.chatId, L["queue_fetching"]));
 
     const std::vector<MediaItem> items = queue_.getQueue(ev.chatId);
-    std::string text = L.fmt("queue_curr", items[0].url, htmlEscape(items[0].title),
+    std::string text = L.fmt("queue_curr", items[0].url, anonx::utils::htmlEscape(items[0].title),
                              items[0].duration, items[0].user);
     for (std::size_t i = 1; i < items.size(); ++i) {
-        text += L.fmt("queue_item", i, htmlEscape(items[i].title), items[i].duration);
+        text += L.fmt("queue_item", i, anonx::utils::htmlEscape(items[i].title), items[i].duration);
     }
 
     // The button label shows the current state; pressing it toggles.
@@ -919,9 +870,9 @@ void Plugins::onSeek(const CommandEvent& ev) {
 void Plugins::onControls(const ButtonEvent& ev) {
     // "controls <action> <chatId> [itemId|q]" — the exact payloads buttons.cpp
     // emits. Anything else means the card predates a restart/upgrade.
-    const std::vector<std::string> parts = splitWs(ev.data);
+    const std::vector<std::string> parts = anonx::utils::splitWs(ev.data);
     std::int64_t chatId = 0;
-    if (parts.size() < 3 || parts[0] != "controls" || !parseI64(parts[2], chatId)) {
+    if (parts.size() < 3 || parts[0] != "controls" || !anonx::utils::parseI64(parts[2], chatId)) {
         api_.answerCallback(ev.queryId, lang_.view(config_.lang_code)["play_expired"],
                             true);
         return;

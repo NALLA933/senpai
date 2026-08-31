@@ -9,6 +9,8 @@
 
 #include "anonx/logger.hpp"
 
+#include "anonx/utils.hpp"
+
 namespace anonx {
 namespace {
 
@@ -29,19 +31,7 @@ std::function<std::string()> stdinPrompt(const std::string& prompt) {
     };
 }
 
-std::string strField(const json& j, const char* key) {
-    if (j.is_object() && j.contains(key) && j[key].is_string()) {
-        return j[key].get<std::string>();
-    }
-    return std::string();
-}
 
-std::int64_t intField(const json& j, const char* key) {
-    if (j.is_object() && j.contains(key) && j[key].is_number()) {
-        return j[key].get<std::int64_t>();
-    }
-    return 0;
-}
 
 }  // namespace
 
@@ -128,11 +118,11 @@ void Userbot::joinSupport(TelegramClient& client) {
     const std::string resp = client.raw().invoke(search.dump());
 
     json chat = json::parse(resp, nullptr, false);
-    if (chat.is_discarded() || !chat.is_object() || strField(chat, "@type") != "chat") {
+    if (chat.is_discarded() || !chat.is_object() || anonx::utils::strField(chat, "@type") != "chat") {
         log().warning(client.name() + ": could not resolve support chat @" + supportChat_);
         return;
     }
-    const std::int64_t chatId = intField(chat, "id");
+    const std::int64_t chatId = anonx::utils::intField(chat, "id");
     if (chatId == 0) return;
 
     json join;
