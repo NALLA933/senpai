@@ -53,7 +53,6 @@
 #include "anonx/lang.hpp"
 #include "anonx/plugins.hpp"
 #include "anonx/queue.hpp"
-#include "anonx/sqlite_database.hpp"
 #include "anonx/telegram_bot_api.hpp"
 #include "anonx/telegram_client.hpp"
 #include "anonx/telegram_assistant_api.hpp"
