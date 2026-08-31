@@ -11,6 +11,8 @@
 #include <thread>
 #include <unordered_map>
 
+#include "anonx/logger.hpp"
+
 namespace anonx {
 namespace {
 
@@ -18,45 +20,40 @@ using nlohmann::json;
 
 // One process-wide pump: TDLib requires that td_receive() be called from a
 // single thread. It routes each received object to the owning client by its
-// "@client_id" field.
+// @client_id.
 class TdPump {
 public:
     static TdPump& instance() {
-        static TdPump p;
-        return p;
+        static TdPump inst;
+        return inst;
+    }
+
+    void registerClient(int clientId, TdClient* client) {
+        std::lock_guard<std::mutex> lk(mapMutex_);
+        clients_[clientId] = client;
+    }
+
+    void unregisterClient(int clientId) {
+        std::lock_guard<std::mutex> lk(mapMutex_);
+        clients_.erase(clientId);
     }
 
     void ensureStarted() {
         std::lock_guard<std::mutex> lk(startMutex_);
-        if (started_) return;
+        if (running_) return;
+        running_ = true;
         stop_.store(false);
-        thread_ = std::thread([this] { run(); });
-        started_ = true;
-    }
-
-    void registerClient(int id, TdClient* c) {
-        std::lock_guard<std::mutex> lk(mapMutex_);
-        clients_[id] = c;
-    }
-
-    void unregisterClient(int id) {
-        std::lock_guard<std::mutex> lk(mapMutex_);
-        clients_.erase(id);
+        th_ = std::thread([this] { run(); });
     }
 
     void stop() {
-        {
-            std::lock_guard<std::mutex> lk(startMutex_);
-            if (!started_) return;
-            stop_.store(true);
-        }
-        if (thread_.joinable()) thread_.join();
-        std::lock_guard<std::mutex> lk(startMutex_);
-        started_ = false;
+        stop_.store(true);
+        if (th_.joinable()) th_.join();
+        running_ = false;
     }
 
 private:
-    TdPump() = default;
+    TdPump() : running_(false), stop_(false) {}
     ~TdPump() { stop(); }
 
     void run() {
@@ -65,7 +62,7 @@ private:
             if (!r) continue;
             std::string s(r);
             // DEBUG LOG
-            Logger::instance().info("TD_RECEIVE_RAW: " + s);
+            log().info("TD_RECEIVE_RAW: " + s);
 
             json j = json::parse(s, nullptr, false);
             if (j.is_discarded() || !j.is_object() || !j.contains("@client_id")) continue;
