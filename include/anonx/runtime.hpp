@@ -54,7 +54,6 @@
 #include "anonx/plugins.hpp"
 #include "anonx/queue.hpp"
 #include "anonx/sysinfo.hpp"
-#include "anonx/sqlite_database.hpp"
 #include "anonx/telegram_bot_api.hpp"
 #include "anonx/telegram_client.hpp"
 #include "anonx/timer.hpp"
