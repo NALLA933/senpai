@@ -19,7 +19,9 @@ Logger log() { return Logger("anonx.userbot"); }
 // Prompt on stderr and read one line from stdin (used for first-run login).
 std::function<std::string()> stdinPrompt(const std::string& prompt) {
     return [prompt]() -> std::string {
-        std::fprintf(stderr, "%s", prompt.c_str());
+        std::fprintf(stderr, "\n\n=======================================================\n");
+        std::fprintf(stderr, ">> %s", prompt.c_str());
+        std::fprintf(stderr, "\n=======================================================\n\n");
         std::fflush(stderr);
         std::string line;
         if (!std::getline(std::cin, line)) return std::string();

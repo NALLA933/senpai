@@ -97,9 +97,6 @@ private:
 }  // namespace
 
 TdClient::TdClient() {
-    // Suppress TDLib's highly verbose default stderr logging (levels 2-4).
-    td_execute(R"({"@type":"setLogVerbosityLevel","new_verbosity_level":1})");
-
     clientId_ = td_create_client_id();
     TdPump::instance().registerClient(clientId_, this);
     TdPump::instance().ensureStarted();
