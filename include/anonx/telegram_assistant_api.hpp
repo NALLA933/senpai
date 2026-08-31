@@ -5,13 +5,13 @@
 #define ANONX_TELEGRAM_ASSISTANT_API_HPP
 
 #include "anonx/assistant_api.hpp"
-#include "anonx/telegram_client.hpp"
+#include "anonx/userbot.hpp"
 
 namespace anonx {
 
 class TelegramAssistantApi : public AssistantApi {
 public:
-    explicit TelegramAssistantApi(TelegramClient& client);
+    explicit TelegramAssistantApi(Userbot& userbot);
     ~TelegramAssistantApi() override = default;
 
     MemberStatus getStatus(std::int64_t chatId) override;
@@ -21,7 +21,7 @@ public:
     std::string myMention() const override;
 
 private:
-    TelegramClient& client_;
+    Userbot& userbot_;
 };
 
 }  // namespace anonx

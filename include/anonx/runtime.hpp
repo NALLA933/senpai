@@ -53,9 +53,10 @@
 #include "anonx/lang.hpp"
 #include "anonx/plugins.hpp"
 #include "anonx/queue.hpp"
-#include "anonx/sysinfo.hpp"
+#include "anonx/sqlite_database.hpp"
 #include "anonx/telegram_bot_api.hpp"
 #include "anonx/telegram_client.hpp"
+#include "anonx/telegram_assistant_api.hpp"
 #include "anonx/timer.hpp"
 #include "anonx/cookie_source.hpp"
 #include "anonx/userbot.hpp"
@@ -135,8 +136,9 @@ private:
     FfmpegThumbnailRenderer thumb_;
 
     TelegramClient bot_;
-    Userbot        userbot_;
     TelegramBotApi api_;
+    Userbot        userbot_;
+    TelegramAssistantApi assistantApi_;
 
     BackgroundTimer              timer_;
     std::unique_ptr<CookieSource> cookieSrc_;

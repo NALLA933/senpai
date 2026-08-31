@@ -61,13 +61,14 @@ Runtime::Runtime(const Config& config, VoiceTransport& transport, Options opts)
       queue_(),
       yt_(),
       sys_(),
+      bot_(botOptions(config, opts_)),
+      api_(bot_),
+      userbot_(static_cast<int>(config.api_id), config.api_hash),
+      assistantApi_(userbot_),
       timer_(),
       cookieSrc_(std::make_unique<CurlCookieSource>()),
-      bot_(botOptions(config, opts_)),
-      userbot_(static_cast<int>(config.api_id), config.api_hash),
-      api_(bot_),
       calls_(transport, queue_, cache_, timer_, config_),
-      plugins_(Plugins::Deps{api_, db_, cache_, queue_, yt_, calls_, thumb_, lang_, config_}),
+      plugins_(Plugins::Deps{api_, assistantApi_, db_, cache_, queue_, yt_, calls_, thumb_, lang_, config_}),
       admin_(AdminPlugins::Deps{api_, db_, cache_, calls_, sys_, thumb_, lang_, config_}) {}
 
 Runtime::~Runtime() { stop(); }

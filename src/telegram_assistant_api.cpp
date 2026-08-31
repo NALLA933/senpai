@@ -25,17 +25,20 @@ std::int64_t intField(const json& j, const char* key) {
 
 }  // namespace
 
-TelegramAssistantApi::TelegramAssistantApi(TelegramClient& client) : client_(client) {}
+TelegramAssistantApi::TelegramAssistantApi(Userbot& userbot) : userbot_(userbot) {}
 
 AssistantApi::MemberStatus TelegramAssistantApi::getStatus(std::int64_t chatId) {
+    auto* client = userbot_.at(0);
+    if (!client) return MemberStatus::Unknown;
     json req;
     req["@type"] = "getChatMember";
     req["chat_id"] = chatId;
-    req["member_id"] = json::object({{"@type", "messageSenderUser"}, {"user_id", client_.me().id}});
+    req["member_id"] = json::object({{"@type", "messageSenderUser"}, {"user_id", client->me().id}});
 
-    const std::string resp = client_.raw().invoke(req.dump());
+    std::string resp = client->raw().invoke(req.dump());
     json j = json::parse(resp, nullptr, false);
-    if (j.is_discarded() || !j.is_object() || strField(j, "@type") == "error") {
+
+    if (j.is_object() && j.value("@type", "") == "error") {
         return MemberStatus::Unknown;
     }
 
@@ -49,34 +52,37 @@ AssistantApi::MemberStatus TelegramAssistantApi::getStatus(std::int64_t chatId) 
 }
 
 bool TelegramAssistantApi::unban(std::int64_t chatId) {
+    auto* client = userbot_.at(0);
+    if (!client) return false;
     json req;
     req["@type"] = "setChatMemberStatus";
     req["chat_id"] = chatId;
-    req["member_id"] = json::object({{"@type", "messageSenderUser"}, {"user_id", client_.me().id}});
+    req["member_id"] = json::object({{"@type", "messageSenderUser"}, {"user_id", client->me().id}});
     req["status"] = json::object({{"@type", "chatMemberStatusLeft"}});
 
-    const std::string resp = client_.raw().invoke(req.dump());
+    std::string resp = client->raw().invoke(req.dump());
     json j = json::parse(resp, nullptr, false);
-    return !j.is_discarded() && j.is_object() && strField(j, "@type") == "ok";
+    return j.is_object() && j.value("@type", "") == "ok";
 }
 
 AssistantApi::JoinResult TelegramAssistantApi::joinByUsername(const std::string& username) {
-    json search;
-    search["@type"] = "searchPublicChat";
-    search["username"] = username;
-    const std::string chatResp = client_.raw().invoke(search.dump());
+    auto* client = userbot_.at(0);
+    if (!client) return {false, false};
+    json searchReq;
+    searchReq["@type"] = "searchPublicChat";
+    searchReq["username"] = username;
+    std::string searchResp = client->raw().invoke(searchReq.dump());
+    json searchJ = json::parse(searchResp, nullptr, false);
 
-    json chat = json::parse(chatResp, nullptr, false);
-    if (chat.is_discarded() || !chat.is_object() || strField(chat, "@type") != "chat") {
+    if (!searchJ.is_object() || searchJ.value("@type", "") == "error") {
         return {false, false};
     }
-    const std::int64_t chatId = intField(chat, "id");
-    if (chatId == 0) return {false, false};
+    std::int64_t chatId = intField(searchJ, "id");
 
-    json join;
-    join["@type"] = "joinChat";
-    join["chat_id"] = chatId;
-    const std::string joinResp = client_.raw().invoke(join.dump());
+    json joinReq;
+    joinReq["@type"] = "joinChat";
+    joinReq["chat_id"] = chatId;
+    std::string joinResp = client->raw().invoke(joinReq.dump());
     json j = json::parse(joinResp, nullptr, false);
     
     if (!j.is_discarded() && j.is_object()) {
@@ -87,10 +93,12 @@ AssistantApi::JoinResult TelegramAssistantApi::joinByUsername(const std::string&
 }
 
 AssistantApi::JoinResult TelegramAssistantApi::joinByInviteLink(const std::string& link) {
+    auto* client = userbot_.at(0);
+    if (!client) return {false, false};
     json req;
     req["@type"] = "joinChatByInviteLink";
     req["invite_link"] = link;
-    const std::string resp = client_.raw().invoke(req.dump());
+    std::string resp = client->raw().invoke(req.dump());
     json j = json::parse(resp, nullptr, false);
     
     if (!j.is_discarded() && j.is_object()) {
@@ -101,7 +109,12 @@ AssistantApi::JoinResult TelegramAssistantApi::joinByInviteLink(const std::strin
 }
 
 std::string TelegramAssistantApi::myMention() const {
-    return client_.me().mention;
+    auto* client = userbot_.at(0);
+    if (!client) return "Assistant";
+    const auto& m = client->me();
+    if (m.id == 0) return "Assistant";
+    std::string name = m.firstName.empty() ? "Assistant" : m.firstName;
+    return "<a href=\"tg://user?id=" + std::to_string(m.id) + "\">" + name + "</a>";
 }
 
 }  // namespace anonx
