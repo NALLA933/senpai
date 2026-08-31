@@ -48,7 +48,7 @@ public:
     void setInteractiveLogin(bool on);
 
     // Construct and boot every assistant. Returns true only if all authorized.
-    bool bootAll(int timeoutMs = 120000);
+    bool bootAll(int timeoutMs = 180000);
     void exitAll();
 
     // 0-based access to a booted assistant (nullptr if out of range).

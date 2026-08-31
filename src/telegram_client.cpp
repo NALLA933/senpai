@@ -390,6 +390,9 @@ void TelegramClient::onUpdate(const std::string& updateJson) {
             }
         }
         // Not an auth message — hand it to the observer (Dispatcher etc.).
+        if (type == "error") {
+            log().error(opts_.name + " received TDLib error: " + updateJson);
+        }
         TdClient::UpdateHandler obs;
         {
             std::lock_guard<std::mutex> lk(observerMutex_);

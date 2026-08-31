@@ -90,8 +90,8 @@ public:
     TelegramClient& operator=(const TelegramClient&) = delete;
 
     // Install the update handler and drive authorization to completion.
-    // Returns true once the account is authorized (analogue of Client.start()).
-    bool boot(int timeoutMs = 60000);
+    // Starts the TDLib state machine and blocks until authorized (or error).
+    bool boot(int timeoutMs = 180000);
 
     // Log out cleanly (TDLib "close"); safe to call more than once.
     void exit();
